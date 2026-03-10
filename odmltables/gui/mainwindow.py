@@ -16,12 +16,16 @@ from PyQt5 import QtCore, QtWidgets, QtGui
 from .compsectionwiz import CompSectionWizard
 from .converterwiz import ConversionWizard
 from .filterwiz import FilterWizard
+from .searchwiz import SearchWizard
 from .generatetemplatewiz import GenerateTemplateWizard
 from .mergewiz import MergeWizard
 from .wizutils import get_graphic_path
 
 from odmltables import VERSION
 
+
+QtCore.QCoreApplication.setAttribute(QtCore.Qt.AA_EnableHighDpiScaling, True)
+QtCore.QCoreApplication.setAttribute(QtCore.Qt.AA_UseHighDpiPixmaps, True)
 
 def handle_exception(exc_type, exc_value, exc_traceback):
     """ handle all exceptions """
@@ -136,6 +140,9 @@ class MainWindow(QtWidgets.QMainWindow):
         self.convertbutton = self.generate_button('Convert between odml\nand '
                                                   'table format',
                                                   "convertodml.svg")
+		# add graphic for search button
+        self.searchbutton = self.generate_button('Search content of odml\n',
+                                                 "searchodml3.svg")
         self.comparebutton = self.generate_button('Compare entries within\nan '
                                                   'odml',
                                                   "comparetable.svg")
@@ -157,7 +164,8 @@ class MainWindow(QtWidgets.QMainWindow):
                 icon.setPixmap(QtGui.QPixmap(filepath))
 
 
-        grid.addWidget(self.convertbutton, 0, 0, 1, 2, QtCore.Qt.AlignCenter)
+        grid.addWidget(self.convertbutton, 0, 0)
+        grid.addWidget(self.searchbutton, 0, 1)
         grid.addWidget(self.comparebutton, 1, 1)
         grid.addWidget(self.generatebutton, 1, 0)
         grid.addWidget(self.filterbutton, 2, 1)
@@ -196,6 +204,8 @@ class MainWindow(QtWidgets.QMainWindow):
 
         if sender == self.convertbutton:
             wizard = ConversionWizard()
+        elif sender == self.searchbutton: # add search wizard
+            wizard = SearchWizard()
         elif sender == self.comparebutton:
             wizard = CompSectionWizard()
         elif sender == self.generatebutton:

@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 """
-
 """
 import os
 import re
@@ -8,7 +7,6 @@ import copy
 import odml
 import csv
 import datetime
-import warnings
 import xlrd
 
 from future.utils import iteritems
@@ -24,8 +22,6 @@ except NameError:
 class OdmlTable(object):
     """
     Class to create tables in different formats from odml-files
-
-
     :param show_all_sections: if set to False, information about the section
         like the path or name of the section wont be in the table again, if
         they are same as in the line before
@@ -35,7 +31,6 @@ class OdmlTable(object):
         tables with an emptycolumn
     :type show_all_sections: bool
     :type show_all_properties: bool
-
     """
 
     def __init__(self, load_from=None):
@@ -119,10 +114,8 @@ class OdmlTable(object):
     def load_from_file(self, load_from):
         """
         loads the odml-data from an odml-file
-
         :param load_from: the path to the odml-file
         :type load_from: string
-
         """
         doc = odml.load(load_from, show_warnings=self.show_odml_warnings)
         # resolve links and includes
@@ -133,7 +126,6 @@ class OdmlTable(object):
     def load_from_odmldoc(self, doc):
         """
         loads the odml-data from an odml-document
-
         :param load_from: the odml-document
         :type load_from: odml-document
         """
@@ -143,7 +135,6 @@ class OdmlTable(object):
     def load_from_function(self, odmlfct):
         """
         loads the odml-data by using a function that creates an odml-document
-
         :param load_from: function that returns an odml-document
         :type load_from: function
         """
@@ -155,7 +146,6 @@ class OdmlTable(object):
         '''
         supplementory function to reconstruct self._docdict from first row in
         table
-
         :param row: list of values in first row of table
         :return: None
         '''
@@ -205,7 +195,6 @@ class OdmlTable(object):
         loads the odml-data from a xls-file. To load the odml, at least Value,
         Path, PropertyName and odmlDatatype must be given in the table. Also,
         the header_titles must be correct
-
         :param load_from: name(path) of the xls-file
         :type load_from: string
         """
@@ -390,7 +379,6 @@ class OdmlTable(object):
         loads the odmldict from a csv-file containing an odml-table. To load
         the odml, at least Value, Path, PropertyName and odmlDatatype must be
         given in the table. Also, the header_titles must be correct
-
         :param load_from: name(path) of the csv-file
         :type load_from: string
         """
@@ -509,8 +497,6 @@ class OdmlTable(object):
         """
         Function to change the Name of a column in your table. Be careful with
         this function if you want to convert the table back to an odml.
-
-
         :param Path: Name of the 'Path'-Column in the table
         :param SectionName: Name of the 'Section Name'-Column in the table
         :param SectionType: Name of the 'Section Type'-Column in the table
@@ -534,7 +520,6 @@ class OdmlTable(object):
         :type DataUnit: string, optional
         :type DataUncertainty: string, optional
         :type odmlDatatype: string, optional
-
         """
 
         for k in kwargs:
@@ -548,7 +533,6 @@ class OdmlTable(object):
     def change_header(self, *args, **kwargs):
         """
         Function to change the header of the table.
-
         The keywordarguments of the function are the possible columns you can
         include into your table; they are listed below, you can also check the
         possible options bei looking at the keys of the header_titles
@@ -558,7 +542,6 @@ class OdmlTable(object):
         Type']. These are the columns you need to be able to convert your table
         back to an odml-file. Important: You can create tables wich dont
         contain any of those four, but they cant be converted back to odml.
-
         :param Path: Position of the 'Path'-Column in the table.
         :param SectionName: Position of the 'Section Name'-Column in the table
         :param SectionType: Position of the 'Section Type'-Column in the table
@@ -584,12 +567,9 @@ class OdmlTable(object):
         :type DataUnit: int, optional
         :type DataUncertainty: int, optional
         :type odmlDatatype: int, optional
-
         :Example:
-
             mytable.change_header(Path=1, Value=3, odmlDataType=2)
                 => outcoming header: ['Path', 'odML Data Type', 'Value']
-
         """
 
         if args:
@@ -647,6 +627,186 @@ class OdmlTable(object):
                     raise TypeError(f'Non valid dtype "{property_dict["odmlDatatype"]}" in odmldict.'
                                     f' Valid types are {self.odtypes.valid_dtypes}')
 
+    def search(self, search_words):
+        """
+        begin search of odmldict entries for all search terms in
+        search_words and for each term intersect the search results,
+		only show entries that contain the search word
+        :param search_words: all terms to be searched for
+        :type search_words: list
+        """
+		# get result for the first search term
+        matches, no_matches = self._single_search(search_words[0])
+        experiment_names = list(set([(dic["Path"].split('/')[2]) for dic in matches]))
+		# when searching for more than one search term
+        if len(search_words) > 1:
+            for i in range(1, len(search_words)):
+				# repeat search for next words
+                matches_tmp, no_matches_tmp = self._single_search(search_words[i])
+                matches += matches_tmp
+                matches_copy = copy.deepcopy(matches)
+                experiment_names_tmp = list(
+                    set([(dic["Path"].split('/')[2]) for dic in matches_tmp]))
+				# get matches that are contained in original search result
+				# and new search result for current search term
+                experiments_intersection = list(set(experiment_names).intersection(experiment_names_tmp))
+				# delete the matches that don't appear in current and 
+				# previous search results
+                for match in matches_copy:
+                    if not match["Path"].split('/')[2] in experiments_intersection:
+                        matches.remove(match)
+                        no_matches_tmp.append(match)
+                no_matches += no_matches_tmp
+                experiment_names = experiments_intersection
+		# display search result
+        self._odmldict = matches
+        return list(set(experiment_names))
+
+
+    def _single_search(self, word):
+        """
+        free text search function to collect odmldict entries 
+        which contain the search term "word" 
+        :param word: current search term 
+        :type word: string
+        """
+        matches = []
+        no_matches = []
+
+        for dic in self._odmldict:
+            try:
+			# search for "word" in odmldict entry
+                matches.append(dic) if re.search(str(word), " ".join(dic["Value"]) \
+				, re.IGNORECASE) else no_matches.append(dic)
+            except TypeError:
+			# works only for odmlDataType string
+			# search values that are numbers
+                try:
+					# distinguish between float and int
+					# if no match, append to no_matches list
+                    if dic["odmlDatatype"] == ('int' or 'float'):
+                        for element in dic["Value"]:
+                            conditionsInt =  [isinstance(element, int),
+                                int(word) == element,
+                                not dic in matches]
+                            conditionsFloat = [isinstance(element, float),
+                                float(word) == element,
+                                not dic in matches]
+                            if all(conditionsInt):
+                                matches.append(dic)
+                            elif all(conditionsFloat): 
+                                matches.append(dic)
+                            else:
+                                if not dic in no_matches:
+                                    no_matches.append(dic)
+                except ValueError:
+                    no_matches.append(dic)
+
+        return matches, no_matches
+
+    def search_prop(self, search_props):
+        """
+        begin search of odmldict entries for all property+
+		value combinations by calling single search function
+		for each pair and intersect search results,
+		show all entries if there is match
+        :param search_props: all property + value pairs to search for
+        :type search_props: dict
+        """
+        props = list(search_props.keys())
+        values = list(search_props.values())
+		# get result for first property and value pair search
+        matches, no_matches = self._single_search_prop(props[0], values[0])
+        exp_names_list = []
+		# necessary, because templates
+		# can have a different path length
+        for dic in matches:
+            if len(dic["Path"].split('/')) > 4:
+                exp_names_list.append((dic["Path"].split('/')[4]))
+            else:
+                exp_names_list.append((dic["Path"].split('/')[2]))
+        experiment_names = list(set(exp_names_list))
+		# when searching for more than one property combination
+        if len(props) > 1:
+            for i in range(1, len(props)):
+                matches_tmp, no_matches_tmp = self._single_search_prop(props[i], values[i])
+                matches += matches_tmp
+                matches_copy = copy.deepcopy(matches)
+                experiment_names_tmp = list(
+                    set([(dic["Path"].split('/')[4]) for dic in matches_tmp]))
+				# get matches that are contained in original search result
+				# and new search result for next property and value pair
+                experiments_intersection = list(set(experiment_names).intersection(experiment_names_tmp))
+				# delete the experiments that don't appear in both search results
+                for match in matches_copy:
+                    if not match["Path"].split('/')[4] in experiments_intersection:
+                        matches.remove(match)
+                        no_matches_tmp.append(match)
+                no_matches += no_matches_tmp
+                experiment_names = experiments_intersection
+		# display search result
+        self._odmldict = matches
+        return list(set(experiment_names))
+
+
+    def _single_search_prop(self, prop, word):
+        """
+        search function to collect odmldict entries which contain the
+        combination of property "prop" and search term "word" 
+        :param prop: current property whose value is searched
+        :param word: current search term 
+        :type prop: string
+        :type word: string
+        """
+		# remove (true/false) info and only keep property name
+        # after properties of odmlDataType 'bool'
+        if len(prop.split()) > 1:
+            prop = prop.split()[0]
+        matches = []
+        no_matches = []
+        for dic in self._odmldict:
+            currProp = dic['Path'].split("/")[-1].split(':')[1]
+            if currProp == prop:
+			# search value of property and compare it with search term
+                try:
+                    matches.append(dic) if re.search(str(word), " ".join(dic["Value"]), \
+					re.IGNORECASE) else no_matches.append(dic)
+			# works only for odmlDataType string
+			# search values that are numbers or boolean
+                except TypeError:
+                    try:
+                        if dic["odmlDatatype"] == ('int' or 'float'):
+						# distinguish between float and int
+						# if no match, append to no_matches list
+                            for element in dic["Value"]:
+                                conditionsInt = [isinstance(element, int),
+                                int(word) == element,
+                                not dic in matches]
+                                conditionsFloat = [isinstance(element, float),
+                                float(word) == element, 
+                                not dic in matches]
+                                if all(conditionsInt):
+                                    matches.append(dic)
+                                elif all(conditionsFloat):
+                                    matches.append(dic)
+                                else:
+								# avoid duplicates
+                                    if not dic in no_matches: no_matches.append(dic) 
+						# special case odmlDataType 'bool'
+                        elif dic["odmlDatatype"] == 'bool':
+							# check if both true, otherwise no match
+                            matches.append(dic) if (dic["Value"] and \
+                            re.search(str(word), 'true', re.IGNORECASE)) else \
+                            no_matches.append(dic)			
+							# check if both false, otherwise no match
+                            matches.append(dic) if (not dic["Value"] and \
+                            re.search(str(word), 'false', re.IGNORECASE)) else \
+                            no_matches.append(dic)						
+                    except ValueError:
+                        no_matches.append(dic)
+
+        return matches, no_matches
+
     def _filter(self, filter_func):
         """
         remove odmldict entries which do not match filter_func.
@@ -666,7 +826,6 @@ class OdmlTable(object):
                comparison_func=lambda x, y: x == y, **kwargs):
         """
         filters odml properties according to provided kwargs.
-
         :param mode: Possible values: 'and', 'or'. For 'and' all keyword
                 arguments must be satisfied for a property to be selected. For 'or'
                 only one of the keyword arguments must be satisfied for the property
@@ -695,13 +854,20 @@ class OdmlTable(object):
                     raise ValueError('Key "%s" is missing in property dictionary %s'
                                      '' % (filter_key, dict_prop))
 
+                # this fails because left is a list, right is an int
                 if comparison_func(dict_prop[filter_key], filter_value):
                     keep_property = True
-                # for comparison of Value entries  we need to compare to
-                # the first entry as those are by default wrapped in a list
-                elif filter_key == 'Value' and len(dict_prop[filter_key]) == 1:
-                    assert type(dict_prop[filter_key]) == list
+                # for singleton lists, we could just check the first element
+                # though this works for now, a real fix would be better
+                elif type(dict_prop[filter_key]) == list and len(dict_prop[filter_key]) == 1:
                     keep_property = comparison_func(dict_prop[filter_key][0], filter_value)
+                elif type(dict_prop[filter_key]) == list and len(dict_prop[filter_key]) > 1:
+                    lst_idx = 0
+                    while (keep_property == False) and (lst_idx < len(dict_prop[filter_key])):
+                        keep_property = comparison_func(dict_prop[filter_key][lst_idx], filter_value)
+                        lst_idx += 1
+                    #for i in range(len(dict_prop[filter_key])):
+
                 else:
                     keep_property = False
 
@@ -840,7 +1006,6 @@ class OdmlTable(object):
 class OdmlDtypes(object):
     """
     Class to handle odml data types, synonyms and default values.
-
     :param basedtypes_dict: Dictionary containing additional basedtypes to
             use as keys and default values as values.
             Default: None
@@ -937,7 +1102,11 @@ class OdmlDtypes(object):
                 result = value
             else:
                 try:
-                    result = datetime.datetime.strptime(value, '%Y-%m-%d %H:%M:%S')
+                    print(value)
+                    if "." in value:
+                        result = datetime.datetime.strptime(value, '%d.%m.%Y')
+                    else:
+                        result = datetime.datetime.strptime(value, '%Y-%m-%d %H:%M:%S')
                 except TypeError:
                     result = datetime.datetime(*value)
         elif dtype == 'date':
@@ -972,15 +1141,12 @@ class OdmlDtypes(object):
         elif dtype == 'float':
             result = float(value)
         elif dtype == 'boolean':
-            # strip whitespace and convert to lower case
-            value = value.strip().lower()
-            if value in ('y', 'yes', 't', 'true', 'on', '1'):
+            if value == "yes":
                 result = True
-            elif value in ('n', 'no', 'f', 'false', 'off', '0'):
+            elif value == "no":
                 result = False
             else:
-                warnings.warn("invalid truth value %r, replacing with None" % (value,))
-                result = None
+                result = bool(value)
         elif dtype in ['string', 'text', 'url', 'person']:
             result = str(value)
         else:
