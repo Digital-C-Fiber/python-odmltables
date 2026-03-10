@@ -1,95 +1,128 @@
+odMLtables (Extended Version)
+=============================
 
-odMLtables
-=================
 An interface to convert odML structures to and from table-like representations, such as spreadsheets.
 
-odMLtables provides a set of functions to simplify the setup, maintenance and usage of a metadata
-management structure using odML_.
-In addition to the Python_ API, odMLtables provides its main functionality also
-via a graphical user interface.
+This repository is a fork of the original odMLtables project:
+https://github.com/INM-6/python-odmltables
 
+It extends the original functionality with additional graphical user interface tools to facilitate metadata exploration and search.
 
-Code Status
------------
-.. image:: https://travis-ci.org/INM-6/python-odmltables.png?branch=master
-   :target: https://travis-ci.org/INM-6/python-odmltables
-   :alt: Unit Test Status
-.. image:: https://coveralls.io/repos/github/INM-6/python-odmltables/badge.svg?branch=master
-   :target: https://coveralls.io/github/INM-6/python-odmltables?branch=master
-   :alt: Unit Test Coverage
-.. image:: https://readthedocs.org/projects/odmltables/badge/?version=latest
-   :target: https://odmltables.readthedocs.io/en/latest/?badge=latest
-   :alt: Documentation Status
+odMLtables provides a set of functions to simplify the setup, maintenance and usage of a metadata management structure using odML. In addition to the Python API, odMLtables provides its main functionality via a graphical user interface.
 
+New Features in this Fork
+-------------------------
+
+Search Wizard
+^^^^^^^^^^^^^
+
+This fork introduces a graphical **Search Wizard** that allows users to search metadata stored in odML files more efficiently.
+
+The wizard enables users to:
+
+- Search for specific words within metadata entries
+- Search for **property–value pairs**
+
+This functionality is intended to simplify metadata findability and exploration when working with experimental datasets.
+
+Microneurography Metadata Workflow
+----------------------------------
+
+The modifications in this fork were developed in the context of building a metadata management workflow for **microneurography recordings**.
+
+The **metadata templates**, **workflow description**, and **user manual** for this application are maintained in a separate repository:
+
+Repository for microneurography metadata workflow and templates:  
+https://github.com/Digital-C-Fiber/odMLtablesForMNG
 
 Dependencies
 ------------
 
-odMLtables is based on odML_. A complete list of dependencies is available in the odMLtables
-documentation at `Read the Docs`_.
-
-Release Versions
-----------------
-Official release versions are available at the `Python Package Index`_ and can be installed using
-pip_::
-
-    $ pip install odmltables
-
-The graphical user interface can be installed using::
-
-    $ pip install odmltables[gui]
-
-
-Latest version
---------------
-
-To install the latest version of odMLtables you first need to download the odMLtables source files and install it in a second step.
-
-Download
---------
-
-The latest version of odMLtables is available on GitHub_. You can either use git and download
-odMLtables directly under Linux using::
-
-    $ cd /home/usr/toolbox/
-    $ git clone https://github.com/INM-6/python-odmltables.git
-
-or alternatively download odMLtables as ZIP file and unzip it to a folder.
-
-
-Documentation
--------------
-
-The odMLtables documentation is available on `Read the Docs`_. It is based on Sphinx_ and also
-locally be built in multiple formats. E.g., to access  the   documentation in html format
-navigate to the documentation folder within odMLtables and  compile  the html documentation::
-
-    $ cd /home/usr/toolbox/python-odmltables/doc
-    $ make html
-
-All output format available can be listed using::
-
-    $ make -n
+odMLtables is based on **odML**. A complete list of dependencies is available in the odMLtables documentation at Read the Docs.
 
 Installation
 ------------
 
-Installation guidelines are available in the official odMLtables documentation
-`Read the Docs`_.
+Since this version is not released on the Python Package Index (PyPI), it must be installed directly from this GitHub repository.
 
+Install the latest version using pip:
 
-Bugs
-----
-If you observe a bug in odMLtables please add a bug report at the `GitHub issue tracker`_
+.. code-block:: bash
 
-.. _`Python`: http://python.org/
-.. _`pip`: http://pypi.python.org/pypi/pip
-.. _`odML`: http://www.g-node.org/projects/odml
-.. _`Sphinx`: http://www.sphinx-doc.org/en/stable/
-.. _`Python Package Index`: https://pypi.python.org/pypi/python-odmltables/
-.. _`GitHub`: https://github.com/INM-6/python-odmltables
-.. _`Read the Docs`: https://odmltables.readthedocs.io/en/latest/
-.. _`GitHub issue tracker`: https://github.com/INM-6/python-odmltables/issues
+    pip install git+https://github.com/YOUR-USERNAME/python-odmltables.git
 
+To install with graphical user interface support:
 
+.. code-block:: bash
 
+    pip install git+https://github.com/YOUR-USERNAME/python-odmltables.git#egg=odmltables[gui]
+
+Alternatively, clone the repository and install locally:
+
+.. code-block:: bash
+
+    git clone https://github.com/YOUR-USERNAME/python-odmltables.git
+    cd python-odmltables
+    pip install .
+
+To install with GUI support locally:
+
+.. code-block:: bash
+
+    pip install .[gui]
+
+Documentation
+-------------
+
+The odMLtables documentation is available on **Read the Docs**.
+
+It is based on **Sphinx** and can also be built locally. To build the HTML documentation:
+
+.. code-block:: bash
+
+    cd doc
+    make html
+
+The generated documentation will be available in:
+
+.. code-block:: bash
+
+    doc/_build/html/index.html
+
+All available output formats can be listed using:
+
+.. code-block:: bash
+
+    make -n
+
+Original Project
+----------------
+
+This repository is based on the original odMLtables project developed at:
+
+INM-6, Forschungszentrum Jülich
+
+Original repository:
+https://github.com/INM-6/python-odmltables
+
+If you use odMLtables in scientific work, please cite the original project accordingly.
+
+The extensions implemented in this fork were developed in the context of microneurography data analysis and metadata management. A scientific publication describing the related methodology and application is available:
+
+Troglio A, Nickerson A, Schlebusch F, Röhrig R, Dunham J, Namer B, Kutafina E. odML-Tables as a Metadata Standard in Microneurography. Stud Health Technol Inform. 2023 Sep 12;307:3-11. doi: 10.3233/SHTI230687. PMID: 37697832.
+https://pubmed.ncbi.nlm.nih.gov/37697832/
+
+Bugs and Issues
+---------------
+
+If you observe a bug or encounter issues, please report them via the GitHub issue tracker of this repository.
+
+License
+-------
+
+This project follows the same license as the original odMLtables project. Please refer to the LICENSE file for details.
+
+Contact
+-------
+
+Email: alina.troglio@rwth-aachen.de
